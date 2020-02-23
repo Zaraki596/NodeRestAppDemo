@@ -65,8 +65,8 @@ app.get('/users', async (req, res) => {
                 });
             }).catch((err) => {
                 return res.send({
-                    status: 'ERR',
-                    data: err
+                    status: 'Error',
+                    message: err
                 });
             });
 
@@ -84,8 +84,13 @@ app.post('/users', async (req, res) => {
             const db = client.db('my-db');
 
             const _name = req.body.name
-            if (_name) {
-                db.collection("users").insertOne({ name: _name }).then((result) => {
+            const _email = req.body.email
+            const _phone = req.body.phone
+            const _age = req.body.age
+            const _password = req.body.password
+            const isValidInput = validateUserInput(req.body)
+            if (isValidInput == 'valid') {
+                db.collection("users").insertOne({ name: _name, email: _email, phone: _phone, age: _age, password: _password }).then((result) => {
                     return res.send({
                         status: 'Ok',
                         data: result.result
@@ -93,20 +98,20 @@ app.post('/users', async (req, res) => {
                 }).catch((err) => {
                     return res.send({
                         status: 'Error',
-                        data: err
+                        message: err
                     });
                 });
             } else {
                 return res.send({
-                    status: 'errOfIf',
-                    data: err + _name
+                    status: 'Error',
+                    message: isValidInput
                 });
             }
         });
     } catch (error) {
         return res.send({
-            status: 'errOfTry',
-            data: error
+            status: 'Connection Error',
+            message: error
         });
     }
 });
@@ -186,12 +191,12 @@ app.put('/users', async (req, res) => {
 const multer = require('multer');
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, './files/')
+        cb(null, './files/')
     },
     filename: function (req, file, cb) {
-      cb(null, Date.now() + '.jpg') //Appending .jpg
+        cb(null, Date.now() + '.jpg') //Appending .jpg
     }
-  })
+})
 
 const upload = multer({ storage: storage })
 const fs = require('fs')
@@ -236,6 +241,30 @@ app.post('/uploadphoto', upload.single('picture'), async (req, res) => {
     }
 });
 
+
+function validateUserInput(body) {
+    if (body.name) {
+        if (body.email) {
+            if (body.phone) {
+                if (body.age) {
+                    if (body.password) {
+                        return 'valid'
+                    } else {
+                        return 'Invalid Password Input'
+                    }
+                } else {
+                    return 'Invalid Age Input'
+                }
+            } else {
+                return 'Invalid Phone Input'
+            }
+        } else {
+            return 'Invalid Email Input'
+        }
+    } else {
+        return 'Invalid Name Input'
+    }
+}
 // const multer = require('multer');
 // const path   = require('path');
 // /** Storage Engine */
